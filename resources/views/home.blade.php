@@ -15,7 +15,7 @@
                                 <li class="chat-user-list">
                                         <div class="chat-image">
                                             {!!  makeImageFromName($user->name) !!}
-                                            <i class="fa fa-circle user-status-icon" title="away"></i>
+                                            <i class="fa fa-circle user-status-icon user-icon-{{ $user->id }}" title="away"></i>
                                         </div>
                                         <div class="chat-name">
                                             {{ $user->name }}
@@ -32,7 +32,7 @@
         </div>
         <div class="col-md-9">
             <h1>Messages</h1>
-
+            <p>Select A User To Begin Conversation.</p>
         </div>
     </div>
 </div>
@@ -47,9 +47,24 @@
 
              let socket = io(ip_address + ':' + socket_port, {transports: ['websocket']});
 
-                socket.on('connect', function(){
-                    socket.emit('user_connected', user_id);
+            socket.on('connect', function(){
+                socket.emit('user_connected', user_id);
+            });
+
+            socket.on('updateUserStatus', (data)=>{
+                let $userStatusIcon = $('.user-status-icon');
+                $userStatusIcon.removeClass('text-success');
+                $userStatusIcon.attr('title', 'Away');
+                console.log(data);
+                $.each(data, function(key,val) {
+                    if(val !== null && val !== 0){
+                        console.log(key);
+                        let $userIcon = $(".user-icon-"+key); //Getting user that is registered in socket users array "Connected"
+                        $userIcon.addClass('text-success');
+                        $userIcon.attr('title', 'Online');
+                    }
                 });
+            });
 
          });
     </script>

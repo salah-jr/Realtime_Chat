@@ -1,16 +1,12 @@
 var express = require('express');
-
 var cors = require('cors');
-
 var app = express();
-
 app.use(cors());
-
 var server = require('http').createServer(app);
-
 var io = require('socket.io')(server);
-
 var port = '3000';
+var users = [];
+
 
 app.use(express.static(__dirname + '/node_modules'));
 
@@ -20,7 +16,17 @@ app.get('/', (req, res) => {
 
 io.on('connection', (socket)=>{
     socket.on("user_connected", (user_id)=>{
+        users[user_id] = socket.id;
+        io.emit('updateUserStatus', users);
         console.log("user connected" , user_id);
+    });
+
+    socket.on('disconnect', function(){
+        var i = users.indexOf('socket.id');
+        console.log(' user #' + i + ' disconnected');
+        users.splice(i, 1, 0);
+        io.emit('updateUserStatus', users);
+
     });
 });
 

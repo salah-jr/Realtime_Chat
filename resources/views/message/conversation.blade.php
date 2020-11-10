@@ -13,9 +13,9 @@
                         <a href="{{ route('message.conversation', $user->id) }}">
                             <div class="box  @if($user->id == $friendInfo->id) active @endif">
                                 <li class="chat-user-list">
-                                        <div class="chat-image">
+                                        <div cl ass="chat-image">
                                             {!!  makeImageFromName($user->name) !!}
-                                            <i class="fa fa-circle user-status-icon" title="away"></i>
+                                            <i class="fa fa-circle user-status-icon user-icon-{{ $user->id }}" title="away"></i>
                                         </div>
                                         <div class="chat-name">
                                             {{ $user->name }}
@@ -85,3 +85,34 @@
     </div>
 </div>
 @endsection
+@push('scripts')
+    <script>
+        $(function () {
+             let user_id = "{{ auth()->user()->id }}";
+             let ip_address = '127.0.0.1';
+             let socket_port = '3000';
+
+             let socket = io(ip_address + ':' + socket_port, {transports: ['websocket']});
+
+            socket.on('connect', function(){
+                socket.emit('user_connected', user_id);
+            });
+
+            socket.on('updateUserStatus', (data)=>{
+                let $userStatusIcon = $('.user-status-icon');
+                $userStatusIcon.removeClass('text-success');
+                $userStatusIcon.attr('title', 'Away');
+                console.log(data);
+                $.each(data, function(key,val) {
+                    if(val !== null && val !== 0){
+                        console.log(key);
+                        let $userIcon = $(".user-icon-"+key); //Getting user that is registered in socket users array "Connected"
+                        $userIcon.addClass('text-success');
+                        $userIcon.attr('title', 'Online');
+                    }
+                });
+            });
+
+         });
+    </script>
+@endpush
