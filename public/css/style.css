@@ -88,6 +88,7 @@ a:hover{
     margin-bottom: 20px;
     position: relative;
     border-radius: 10px;
+    overflow-y: scroll;
 }
 
 .message-text{
@@ -126,4 +127,9 @@ a:hover{
 
 .chat-input-toolbar .tool-items:focus{
     opacity: 1;
+}
+.messageWraper
+{
+    position:absolute;
+    right:0;
 }

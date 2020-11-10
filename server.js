@@ -4,6 +4,8 @@ var app = express();
 app.use(cors());
 var server = require('http').createServer(app);
 var io = require('socket.io')(server);
+var Redis = require('ioredis');
+var redis = new Redis();
 var port = '3000';
 var users = [];
 
@@ -13,6 +15,23 @@ app.use(express.static(__dirname + '/node_modules'));
 app.get('/', (req, res) => {
     res.send('<h1>Hello From Server Side</h1>');
 });
+
+redis.subscribe('private-channel', function(){
+    console.log('Subscribed to private channel');
+});
+
+redis.on('message', function(channel, message) {
+    message = JSON.parse(message);
+    console.log(message);
+    if (channel == 'private-channel') {
+        let data = message.data.data;
+        let receiver_id = data.receiver_id;
+        let event = message.event;
+
+        io.to(`${users[receiver_id]}`).emit(channel + ':' + message.event, data);
+    }
+});
+
 
 io.on('connection', (socket)=>{
     socket.on("user_connected", (user_id)=>{

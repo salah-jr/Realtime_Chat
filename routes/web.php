@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\MessageController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -17,4 +17,9 @@ use Illuminate\Support\Facades\Route;
 Auth::routes();
 
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-Route::get('/conversation/{userId}', [App\Http\Controllers\MessageController::class, 'conversation'])->name('message.conversation');
+
+Route::get('/conversation/{userId}', [App\Http\Controllers\MessageController::class, 'conversation'])
+    ->name('message.conversation');
+
+Route::post('send-message', [App\Http\Controllers\MessageController::class, 'sendMessage'])
+    ->name('message.send-message');

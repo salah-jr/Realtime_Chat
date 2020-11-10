@@ -13,7 +13,7 @@
                         <a href="{{ route('message.conversation', $user->id) }}">
                             <div class="box  @if($user->id == $friendInfo->id) active @endif">
                                 <li class="chat-user-list">
-                                        <div cl ass="chat-image">
+                                        <div class="chat-image">
                                             {!!  makeImageFromName($user->name) !!}
                                             <i class="fa fa-circle user-status-icon user-icon-{{ $user->id }}" title="away"></i>
                                         </div>
@@ -33,32 +33,17 @@
             <h1>Messages</h1>
             <div class="chat-header">
                 <div class="chat-image">
-                    {!!  makeImageFromName($user->name) !!}
+                    {!!  makeImageFromName($friendInfo->name) !!}
                 </div>
                 <div class="chat-name">
-                    {{ $user->name }}
+                    {{ $friendInfo->name }}
                     <i class="fa fa-circle user-status-head" title="away" id="userStatusHead{{ $friendInfo->id }}"></i>
                 </div>
             </div>
             <div class="chat-body" id="chatBody">
                     <div class="message-listing" id="messageWrapper">
                         <div class="row message align-items-center mb-2">
-                            <div class="col-md-12 user-info">
-                                <div class="chat-image">
-                                    {!!  makeImageFromName("Mohammed Salah") !!}
-                                </div>
-                                <div class="chat-name">
-                                    Mohammed Salah
-                                    <span class="small time text-grey-500" title="2020-7-11 10:30pm">
-                                        10:30 pm
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="col-md-12 message-content">
-                                <div class="message-text">
-                                    Message Here
-                                </div>
-                            </div>
+
                         </div>
                     </div>
             </div>
@@ -88,12 +73,18 @@
 @push('scripts')
     <script>
         $(function () {
-             let user_id = "{{ auth()->user()->id }}";
-             let ip_address = '127.0.0.1';
-             let socket_port = '3000';
 
-             let socket = io(ip_address + ':' + socket_port, {transports: ['websocket']});
+            let $chatInput = $(".chat-input");
+            let $chatInputToolbar = $(".chat-input-toolbar");
+            let $chatBody = $(".chat-body");
+            let $messageWrapper = $("#messageWrapper");
 
+            let user_id = "{{ auth()->user()->id }}";
+            let ip_address = '127.0.0.1';
+            let socket_port = '3000';
+
+            let socket = io(ip_address + ':' + socket_port, {transports: ['websocket']});
+            let friendId = "{{ $friendInfo->id }}";
             socket.on('connect', function(){
                 socket.emit('user_connected', user_id);
             });
@@ -113,6 +104,92 @@
                 });
             });
 
+            $chatInput.keypress(function (e) {
+               let message = $(this).html();
+               if (e.which === 13 && !e.shiftKey) {
+                   $chatInput.html("");
+                   sendMessage(message);
+                   return false;
+               }
+            });
+            function sendMessage(message) {
+                let url = "{{ route('message.send-message') }}";
+                let form = $(this);
+                let formData = new FormData();
+                let token = "{{ csrf_token() }}";
+                formData.append('message', message);
+                formData.append('_token', token);
+                formData.append('receiver_id', friendId);
+                appendMessageToSender(message);
+                $.ajax({
+                   url: url,
+                   type: 'POST',
+                   data: formData,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'JSON',
+                   success: function (response) {
+                       if (response.success) {
+                           console.log(response.data);
+                       }
+                   }
+                });
+            }
+
+            function appendMessageToSender(message) {
+                let name = '{{ $myInfo->name }}';
+                let image = '{!! makeImageFromName($myInfo->name) !!}';
+                let userInfo = '<div class="col-md-12 user-info">\n' +
+                    '<div class="chat-image">\n' + image +
+                    '</div>\n' +
+                    '\n' +
+                    '<div class="chat-name font-weight-bold">\n' +
+                    name +
+                    '<span class="small time text-gray-500" title="'+getCurrentDateTime()+'">\n' +
+                    getCurrentTime()+'</span>\n' +
+                    '</div>\n' +
+                    '</div>\n';
+                let messageContent = '<div class="col-md-12 message-content">\n' +
+                    '                            <div class="message-text">\n' + message +
+                    '                            </div>\n' +
+                    '                        </div>';
+                let newMessage = '<div class="row message align-items-center mb-2">'
+                    +userInfo + messageContent +
+                    '</div>';
+
+                $messageWrapper.append(newMessage);
+
+            }
+
+
+            function appendMessageToReceiver(message) {
+                let name = '{{ $friendInfo->name }}';
+                let image = '{!! makeImageFromName($friendInfo->name) !!}';
+                let userInfo = '<div class="col-md-12 user-info">\n' +
+                    '<div class="chat-image">\n' + image +
+                    '</div>\n' +
+                    '\n' +
+                    '<div class="chat-name font-weight-bold">\n' +
+                    name +
+                    '<span class="small time text-gray-500" title="'+dateFormat(message.created_at)+'">\n' +
+                    timeFormat(message.created_at)+'</span>\n' +
+                    '</div>\n' +
+                    '</div>\n';
+                let messageContent = '<div class="col-md-12 message-content">\n' +
+                    '                            <div class="message-text">\n' + message.content +
+                    '                            </div>\n' +
+                    '                        </div>';
+                let newMessage = '<div class="row message align-items-center mb-2">'
+                    +userInfo + messageContent +
+                    '</div>';
+
+                $messageWrapper.append(newMessage);
+            }
+            socket.on("private-channel:App\\Events\\PrivateMessageEvent", function (message)
+            {
+               appendMessageToReceiver(message);
+
+            });
          });
     </script>
 @endpush
